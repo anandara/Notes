@@ -1,0 +1,353 @@
+
+-------------- Variance----------------------
+hig bias , low variance --> Linear Regression, Logistic regression
+lowbias, high variance --> DT, SVm, Kmean
+Bagging --> decrease variance by averaging each tree with balance biased
+Boosting --> lower bias continually week learner to convert strong learner , it make overfit ( so need to tuned correcly)
+
+
+
+
+Accuracy,F1score for multiclass label
+
+
+NLP :
+
+https://www.youtube.com/watch?v=QCk1iDQlaWA&list=PLVNY1HnUlO27T2H_KspAKembHX_ru0Ha1
+
+
+
+-----------------------------------------------------------------------
+flights = sc.textFile('flights.csv')
+type(flights)
+# RDD to Spark DataFrame
+sparkDF = flights.map(lambda x: str(x)).map(lambda w: w.split(',')).toDF()
+
+#Spark DataFrame to Pandas DataFrame
+pdsDF = sparkDF.toPandas()
+
+type(pdsDF)
+<class 'pandas.core.frame.DataFrame'>
+
+import dask.array as da
+
+
+
+hive :
+
+sqlserver we have sp where as will create the .sql file 
+
+- ddl script ( table creation Stage, target)
+- work table (source data loaded into stage table)
+- Yarn cluster ( run on )
+- module 
+- Creating table 
+ORC , parquet, Avro ( mostly they wnt use) with partition 
+
+how to run the hive query
+
+1.Create the project 
+	- Module
+		- 1.sql
+		-2.sql
+		-3.sql
+
+2.connect putty and run the code hive -f locationoffilename ( local path /HDFS path)
+  you should have permission
+
+3. Create shellscript 
+	hive -e " sql query"
+
+
+
+join:
+
+table 1 inner join table 2 -- > sqlserver 
+
+Hive will use inner join got the performence issue 
+
+table 1 left join table 2 where table 1 is not null 
+
+
+incremental logic based on the loaddate from source table  insert into stage table since partition will be created while table creation itself
+
+check with the final table with stage table the record which are not available in the final those records areonly inserted from stage table
+
+
+semi join :
+
+
+
+optimization :
+--------------
+
+ 
+subquery --> parallel execution = true ( two subquery will run parllel)
+
+select A  unionall select B ( except A) you can set parllel execution =TRUE
+
+header = false while we are showing the hive run reuslts
+
+we wnt use USEDB instead of db.dbo.tablename 
+
+
+Table copy :
+
+1 million record with partition table from DB1 --> copy into DB2 
+
+describe formatted tablename --> Location 
+
+create table in DB2 by using below query
+
+create table db2.tablename like db1.tablename
+
+
+Getting table script fromexisting table
+
+SHOW CREATE TABLE myTable;
+
+hdfs cp -sourcepath  - destpath -r ( since table is partition it will recursive)
+
+partition refresh MSCK repair table on tablename
+
+copy one cluster to another ( copy from Production cluster to development cluster)
+
+hadoop diskcp queuename simple/ortho allowed/ checksumtype / memory 
+-- insert
+--delete
+--update (overwrite)
+hadoop disckcp  sourceserver destinationserver
+
+
+create table tablename as select colname1,colname2,colname3 from tablename
+
+error:
+
+semnetic error
+parse err
+
+Top 10 Optimization :
+
+1. Partition --> store data in seperate directory ,it should always be a low cardinal attribute
+2.Denormalized data --> since normalization require join operaiton
+3.compression on  mapper/reducer output --> internally reduces the amount of data transfers between mappers and reducers across the network,
+Compression can be applied on the mapper and reducer output individually.
+ex:gzip, snappy, lzo, bzip,
+4.MAp join --> if we are joining two table either of one of two table is small and fit in memory 
+set hive.auto.convert.join =true;
+5.Bucket-->Bucketing in Hive distributes the data in different buckets based on the hash results on the bucket key
+SET hive.enforce.bucketing=true
+SET hive.optimize.bucketmapjoin=true
+6.input format selection --> JSON type of format is not good for production system , readable format will take lot of time to parse the data 
+in order to avoid hive comes with columnar input format like ORC,RCfile 
+it will help to reduce the read operation in analytic queries by allowing each column access individually.
+7.parllel execution :hiv query will convert into mapreduce jobs in sequentally by default but we can run the query which are not dependent with each otherthose queries in parallel
+SET hive.exec.parallel=true.
+8.vectorization -->vectorization should be enable  ( performence will be increasae)  -- > DML operaiton only require
+data will be split rows (1024 rows)  into batch 
+set hive.vectorized.execution.enabled = true;
+Note: To use vectorized query execution, you must store your data in ORC format
+9.Sample -->Sampling allows users to take a subset of dataset and analyze 
+TABLESAMPLE can sample at various granularity levels – it can return only subsets of buckets (bucket sampling), or HDFS blocks (block sampling),
+ or only first N records from each input split
+
+
+ORC :
+
+CREATE TABLE IF NOT EXISTS mycars(
+        Name STRING, 
+        Miles_per_Gallon INT,
+        Cylinders INT,
+        Displacement INT,
+        Horsepower INT, 
+        Weight_in_lbs INT,
+        Acceleration DECIMAL,
+        Year DATE,
+        Origin CHAR(1))
+    COMMENT 'Data about cars from a public database'
+    ROW FORMAT DELIMITED
+    FIELDS TERMINATED BY ','
+    STORED AS ORC;
+     location '/user/<username>/visdata'; 	 	
+
+INSERT OVERWRITE TABLE mycars SELECT * FROM cars;
+
+
+
+Linux server  installed Hortonworks sandbox --> hadoop,spark,jupyter notebook,package 
+
+windows machine --> through Putty  --> connect sandbox server --> Ambari tool ( cluster monitor tool) 
+what are all the node up and down high 
+
+Cluster size -->  80 node cluster ( data node)  
+
+over all node size --> 40 terabytes ( Ram size)
+
+Build tool --> SPT
+
+PArt of Big data  task --> we are going to decommision the netezza and build enterprise data lake
+
+for netezza pull the information from QNXT , ERR and create SP for business logic to derive L1 table 
+
+
+Source ( QNXT, ERR, Netezza)  through atternity tool ( incremental files) -->CSV file put into landing layer (shared path windows) through talend will move to --> HDFS Location ( inbound layer)
+
+--> create Hive table (usr/hive/warehouse/tablename/) incremental file placed inside the folder L0 table ( Hive table)
+
+-->netezza  business  logic  (sp ) convert into spark sql  --> L1 table (dim, fact table) sementic layer  
+
+[ atscale ]-->  virtual Cube build --> generate report in bi report
+
+
+spark job incremental daily
+
+
+incrmental file size --> 6 gb per day 
+
+scheduler -- Autosys
+
+----------------Hive part---------------------
+hive> create database london_crimes;
+OK
+Time taken: 5.054 seconds
+hive> use london_crimes;
+OK
+Time taken: 0.046 seconds
+hive> create table if not exists crimes (
+    > lsoa_code string,
+    > borough string,
+    > major_category string,
+    > minor_category string,
+    > value int,
+    > year int)
+    > row format delimited
+    > fields terminated by ','
+    > stored as textfile;
+OK
+Time taken: 0.633 seconds
+
+hive> load data local inpath '/home/suran/Documents/london_crime_clean.csv' overwrite into table crimes;
+
+Loading data to table london_crimes.crimes
+OK
+Time taken: 14.429 seconds
+hive> select * from crimes limit 10;
+
+--create the hive managed orc table
+hive> create table londoncrimes stored as orc as
+    > select * from crimes;
+
+Link:
+https://hadoopsters.com/2017/12/19/how-to-build-optimal-hive-tables-using-orc-and-metastore-statistics/
+
+set hive.compute.query.using.stats=true;
+set hive.stats.fetch.column.stats=true;
+
+
+Analyzing a table (also known as computing statistics) is a built-in Hive operation that you can execute to collect metadata on your table. 
+This can vastly improve query times on the table
+ because it collects the row count, file count, and file size (bytes) that make up the data in the table and gives that to the query planner before execution
+
+ANALYZE TABLE my_database.my_table compute statistics;
+
+ANALYZE TABLE my_database.my_table PARTITION (YEAR=2017, MONTH=11, DAY=30) compute statistics;
+
+ANALYZE TABLE my_database.my_table compute statistics for column1, column2, column3; -- column stats for non-partitioned table
+ANALYZE TABLE my_database.my_table PARTITION (YEAR=2017, MONTH=11, DAY=30, HOUR=0) compute statistics for column1, column2, column3; -- column stats for single hour of partitioned table
+ANALYZE TABLE my_database.my_table PARTITION (YEAR=2017, MONTH=11, DAY=30, HOUR) compute statistics for column1, column2, column3; -- column stats for a single day of partitioned table
+
+
+UDF,UDAF,UDTF:
+https://www.linkedin.com/pulse/hive-functions-udfudaf-udtf-examples-gaurav-singh/
+ need to write java code and convert into jar and import into hive create temporay function for java class and use the function in the hive query
+UDF--> user defined function --> one to one 
+UDAF --> user defined aggrgate function --> many to one
+UDTF--> User defined Table fucntion --> one to many ( single column into multiple column or single row into multiple rows)
+
+
+------------------------jupyter notebook------------------
+
+pip install pyhive
+pip install pandas
+
+
+from pyhive import hiv
+
+conn=hive.Connection(host="servername", port=10000, auth='NOSASL',username='hiveuser',database='Dbanme')
+
+import pandas pd
+
+pd.read_sql('select column from tablename ' ,conn)
+
+
+
+
+
+--------------------HDFS path----------------------
+
+
+import pandas as pd
+from hdfs import InsecureClient
+import os
+
+# Connecting to Webhdfs by providing hdfs host ip and webhdfs port (50070 by default)
+client_hdfs = InsecureClient('http://' + os.environ['IP_HDFS'] + ':50070')
+
+# ====== Reading files ======
+with client_hdfs.read('/user/hdfs/wiki/helloworld.csv', encoding = 'utf-8') as reader:
+    df = pd.read_csv(reader,index_col=0)
+
+# write pandas data frame to HDFS
+
+import pandas as pd
+df_app = pd.DataFrame(...)
+df_app.to_csv("./application.txt", index=False)
+
+and second you should copy local file into the HDFS directory like the below.
+ 
+import subprcess
+subprocess.call("hdfs dfs -copyFromLocal ./application.txt /user/hdfs/")
+
+
+Precision vs recall:
+
+Precision will be how much correct prediction out of total prediction
+Recall will be correct prediction.out of actuals
+
+precision will give example as Recommending the health plan for my patient will give important for precision
+
+ Rejecting a proper one is precision
+
+ Allowing a failed case is recall
+
+ Simple , oru concept padichalalm fulla end to end paddikunum it’s called precision
+[
+ Ellam concept padikanum so obviously will forget few things that’s called recall
+
+high recall means FN should be low
+High precision  means FP Should be low
+
+ROC is a probability curve and AUC represents degree or measure of separability. It tells how much model is capable of distinguishing between classes. Higher the AUC, 
+better the model is at predicting 0s as 0s and 1s as 1s
+
+
+The ROC curve is plotted with TPR against the FPR where TPR is on y-axis and FPR is on the x-axis.
+
+Y-axis --> FPR X- axis--> TPR
+
+An excellent model has AUC near to the 1 which means it has good measure of separability
+It is predicting 0s as 1s and 1s as 0s. And when AUC is 0.5 model has no class separation capacity whatsoever.
+When AUC is approximately 0, model is actually reciprocating the classes.
+ It means, model is predicting negative class as a positive class and vice versa
+
+
+
+
+
+
+
+
+
+ 
+
+
