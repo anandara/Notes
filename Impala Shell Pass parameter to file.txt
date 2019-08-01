@@ -1,0 +1,123 @@
+I can able to connect impala-shell through beeline.
+
+ 
+
+Accessing impala-shell through beeline
+
+--------------------------------------
+
+beeline -u  "jdbc:hive2://dc01cdhgnpl01.molina.mhc:21051/default;principal=impala/dc01cdhgnpl01.molina.mhc@MOLINA.MHC;ssl=true;sslTrustStore=/opt/cloudera/security/jks/truststore.jks"
+
+ 
+
+ 
+
+Note: unable to pass explicit parameters to impala-shell accessing through beeline. Please let me know if you find the solution.
+
+ 
+
+ 
+
+Below are types to pass argument to respective shells
+
+ 
+
+1> command to pass arguments for hive
+
+-----------------------------------
+
+ 
+
+hive -f vartest.sql --hiveconf dt=201601
+
+ 
+
+calling inside vartest.sql file
+
+--------------------------------
+
+select count(1) as cnt from eim_reporting_db.cmssnfproviderinfo where providerstate='${hiveconf:st}'
+
+ 
+
+2> command to pass arguments for beeline
+
+----------------------------------------
+
+beeline -u  "jdbc:hive2://dc01cdhmnpl03.molina.mhc:10000/default;principal=hive/dc01cdhmnpl03.molina.mhc@MOLINA.MHC;ssl=true;sslTrustStore=/opt/cloudera/security/jks/truststore.jks"
+
+ -f vartest.sq1 --hivevar st=OH
+
+ 
+
+ calling inside vartest.sql file
+
+--------------------------------
+
+select count(1) as cnt from eim_reporting_db.cmssnfproviderinfo where providerstate='${hivevar:st}'
+
+ 
+
+ 
+
+3> command to pass arguments for impala-shell 
+
+----------------------------------------
+
+Below query tested and attached log for reference.
+
+ 
+
+impala-shell -i dc01cdhgnpl01.molina.mhc:21001 -d default -k --ssl --ca_cert=/opt/cloudera/security/ca-certs/MHI-EntCA-LRoot.pem -c -f /home/Muthuku3/memberdata.sql --var=dt=201601 > /home/Muthuku3/Mltss/memberdatargument.log 2>&1
+
+ 
+
+calling inside memberdata.sql
+
+------------------------------
+
+INSERT OVERWRITE TABLE eim_reporting_db.bh_memberdata_summary PARTITION(part_state)
+
+SELECT
+
+MEM.YEAR_MO
+
+,UPPER(MEM.LOB_GL) as LOB
+
+,UPPER(MEM.PROD_GL) as PRODUCTNAME,IS_ACTIVE
+
+,sum(MM_UNITS) as MEM_COUNT,
+
+MEM.PART_STATE AS PART_STATE
+
+FROM semantic_db.medinsight_membermonths MEM
+
+INNER JOIN eim_reporting_db.bh_unique_members_v1 UMEM
+
+                ON UMEM.PAT_ID=MEM.PAT_ID
+
+                AND UMEM.PART_STATE= MEM.PART_STATE
+
+                AND MEM.YEAR_MO >= '${var:dt}'
+
+WHERE MEM.YEAR_MO >='${var:dt}'AND MEM.PART_STATE NOT IN('MS')
+
+GROUP BY
+
+MEM.YEAR_MO
+
+,UPPER(MEM.LOB_GL)
+
+,UPPER(MEM.PROD_GL)
+
+,IS_ACTIVE
+
+,MEM.PART_STATE
+
+ 
+
+Log captured at:
+
+http://dc01cdhdnpl27.molina.mhc:25000/query_profile?query_id=50415c37c19a45c5:22c41bd800000000
+
+ 

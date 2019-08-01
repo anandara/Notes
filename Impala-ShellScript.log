@@ -1,0 +1,28 @@
+Starting Impala Shell using Kerberos authentication
+Using service name 'impala'
+SSL is enabled
+Connected to dc01cdhgnpl01.molina.mhc:21001
+Server version: impalad version 2.10.0-cdh5.13.3 RELEASE (build 15a453e15865344e75ce0fc6c4c760696d50f626)
+Query: use `default`
+Query: insert OVERWRITE TABLE eim_reporting_db.bh_memberdata_summary PARTITION(part_state)
+SELECT
+MEM.YEAR_MO
+,UPPER(MEM.LOB_GL) as LOB
+,UPPER(MEM.PROD_GL) as PRODUCTNAME,IS_ACTIVE
+,sum(MM_UNITS) as MEM_COUNT,
+MEM.PART_STATE AS PART_STATE
+FROM semantic_db.medinsight_membermonths MEM
+INNER JOIN eim_reporting_db.bh_unique_members_v1 UMEM
+                ON UMEM.PAT_ID=MEM.PAT_ID
+                AND UMEM.PART_STATE= MEM.PART_STATE
+                AND MEM.YEAR_MO >= '201601'
+WHERE MEM.YEAR_MO >='201601'AND MEM.PART_STATE NOT IN('MS')
+GROUP BY
+MEM.YEAR_MO
+,UPPER(MEM.LOB_GL)
+,UPPER(MEM.PROD_GL)
+,IS_ACTIVE
+,MEM.PART_STATE
+Query submitted at: 2019-07-31 07:25:22 (Coordinator: http://dc01cdhdnpl27.molina.mhc:25000)
+Query progress can be monitored at: http://dc01cdhdnpl27.molina.mhc:25000/query_plan?query_id=50415c37c19a45c5:22c41bd800000000
+Modified 7201 row(s) in 175.70s
